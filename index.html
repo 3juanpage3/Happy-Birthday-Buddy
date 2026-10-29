@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy Birthday Jason! 🎉</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #000;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #cake {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      cursor: crosshair;
+    }
+    .message-card {
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      width: 90%;
+      max-width: 650px;
+      padding: 16px 24px;
+      background: rgba(10, 5, 20, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 0, 128, 0.4);
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 0 30px rgba(255, 0, 128, 0.3),
+                  0 0 15px rgba(0, 210, 255, 0.2);
+      pointer-events: none;
+    }
+    .bday-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #ff007f;
+      text-transform: uppercase;
+      text-shadow: 0 0 10px rgba(255, 0, 128, 0.9),
+                   0 0 20px rgba(0, 255, 204, 0.6);
+      margin-bottom: 6px;
+    }
+    .bday-msg {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: #f0f0f0;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 8px rgba(0, 210, 255, 0.5);
+    }
+    .hint {
+      position: absolute;
+      top: 15px;
+      width: 100%;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hint">Click anywhere to launch custom fireworks! 🎆</div>
+  <canvas id="cake"></canvas>
+
+  <div class="message-card">
+    <div class="bday-title">🎉 HAPPY BIRTHDAY JASON! 🎉</div>
+    <div class="bday-msg">
+      To my best friend: thank you for always having my back and bringing so much light into life. May this year bring you endless success, joy, and unforgettable moments! Keep shining bright! 🥳✨
+    </div>
+  </div>
+
+  <script>
+    window.requestAnimationFrame =
+      window.__requestAnimationFrame ||
+      window.requestAnimationFrame ||
+      window.webkitRequestAnimationFrame ||
+      window.mozRequestAnimationFrame ||
+      window.oRequestAnimationFrame ||
+      window.msRequestAnimationFrame ||
+      (function () {
+        return function (callback, element) {
+          var lastTime = element.__lastTime;
+          if (lastTime === undefined) lastTime = 0;
+          var currTime = Date.now();
+          var timeToCall = Math.max(1, 33 - (currTime - lastTime));
+          window.setTimeout(callback, timeToCall);
+          element.__lastTime = currTime + timeToCall;
+        };
+      })();
+
+    window.isDevice = (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(((navigator.userAgent || navigator.vendor || window.opera)).toLowerCase()));
+
+    var loaded = false;
+    var init = function () {
+      if (loaded) return;
+      loaded = true;
+
+      var mobile = window.isDevice;
+      var koef = mobile ? 0.5 : 1;
+      var canvas = document.getElementById('cake');
+      var ctx = canvas.getContext('2d');
+      var width = canvas.width = koef * innerWidth;
+      var height = canvas.height = koef * innerHeight;
+      var rand = Math.random;
+
+      ctx.fillStyle = "rgba(0,0,0,1)";
+      ctx.fillRect(0, 0, width, height);
+
+      // --- BACKGROUND FIREWORKS SYSTEM ---
+      var fireworks = [];
+
+      function createFirework(targetX, targetY) {
+        var startX = rand() * width;
+        var startY = height;
+        var hue = Math.floor(rand() * 360);
+        var count = mobile ? 40 : 80;
+        
+        fireworks.push({
+          x: startX,
+          y: startY,
+          targetX: targetX || rand() * width,
+          targetY: targetY || rand() * (height * 0.5),
+          speed: rand() * 4 + 7,
+          angle: Math.atan2((targetY || rand() * (height * 0.5)) - startY, (targetX || rand() * width) - startX),
+          particles: [],
+          exploded: false,
+          hue: hue
+        });
+      }
+
+      function updateAndDrawFireworks() {
+        // Auto-launch random fireworks
+        if (rand() < 0.035) {
+          createFirework();
+        }
+
+        for (var i = fireworks.length - 1; i >= 0; i--) {
+          var fw = fireworks[i];
+
+          if (!fw.exploded) {
+            fw.x += Math.cos(fw.angle) * fw.speed;
+            fw.y += Math.sin(fw.angle) * fw.speed;
+
+            // Draw rocket trail
+            ctx.save();
+            ctx.strokeStyle = "hsl(" + fw.hue + ", 100%, 70%)";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(fw.x - Math.cos(fw.angle) * 10, fw.y - Math.sin(fw.angle) * 10);
+            ctx.lineTo(fw.x, fw.y);
+            ctx.stroke();
+            ctx.restore();
+
+            // Explode condition
+            var dist = Math.hypot(fw.targetX - fw.x, fw.targetY - fw.y);
+            if (dist < 15 || fw.y <= fw.targetY) {
+              fw.exploded = true;
+              var pCount = mobile ? 35 : 70;
+              for (var j = 0; j < pCount; j++) {
+                var pAngle = rand() * Math.PI * 2;
+                var pSpeed = rand() * 6 + 1;
+                fw.particles.push({
+                  x: fw.x,
+                  y: fw.y,
+                  vx: Math.cos(pAngle) * pSpeed,
+                  vy: Math.sin(pAngle) * pSpeed,
+                  alpha: 1,
+                  decay: rand() * 0.02 + 0.01,
+                  hue: fw.hue + (rand() * 40 - 20)
+                });
+              }
+            }
+          } else {
+            // Draw explosion burst
+            for (var k = fw.particles.length - 1; k >= 0; k--) {
+              var p = fw.particles[k];
+              p.x += p.vx;
+              p.y += p.vy;
+              p.vy += 0.08; // Gravity
+              p.vx *= 0.96;
+              p.vy *= 0.96;
+              p.alpha -= p.decay;
+
+              if (p.alpha > 0) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = "hsl(" + p.hue + ", 100%, 65%)";
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, rand() * 1.5 + 1, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+              } else {
+                fw.particles.splice(k, 1);
+              }
+            }
+
+            if (fw.particles.length === 0) {
+              fireworks.splice(i, 1);
+            }
+          }
+        }
+      }
+
+      // --- PARAMETRIC CAKE POINT GENERATOR ---
+      var cakePointsOrigin = [];
+
+      function generateCakeOutline() {
+        var pts = [];
+
+        function addLine(x1, y1, x2, y2, density) {
+          for (var t = 0; t <= 1; t += 1 / density) {
+            pts.push([x1 + (x2 - x1) * t, y1 + (y2 - y1) * t]);
+          }
+        }
+
+        function addEllipse(cx, cy, rx, ry, count) {
+          for (var i = 0; i < count; i++) {
+            var a = (i / count) * Math.PI * 2;
+            pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]);
+          }
+        }
+
+        // 1. Serving Platter
+        addEllipse(0, 160, 200, 35, 120);
+
+        // 2. Bottom Tier
+        addEllipse(0, 150, 150, 25, 100);
+        addEllipse(0, 80, 150, 25, 100);
+        addLine(-150, 80, -150, 150, 30);
+        addLine(150, 80, 150, 150, 30);
+
+        // 3. Middle Tier
+        addEllipse(0, 80, 105, 18, 80);
+        addEllipse(0, 20, 105, 18, 80);
+        addLine(-105, 20, -105, 80, 25);
+        addLine(105, 20, 105, 80, 25);
+
+        // 4. Top Tier
+        addEllipse(0, 20, 70, 12, 60);
+        addEllipse(0, -40, 70, 12, 60);
+        addLine(-70, -40, -70, 20, 20);
+        addLine(70, -40, 70, 20, 20);
+
+        // 5. Candles (Left, Middle, Right)
+        var candleXs = [-35, 0, 35];
+        candleXs.forEach(function (cx) {
+          addLine(cx, -40, cx, -80, 20);
+          for (var a = 0; a < Math.PI * 2; a += 0.3) {
+            pts.push([cx + Math.sin(a) * 6, -92 + Math.cos(a) * 12]);
+          }
+        });
+
+        // 6. Garland Light Bulbs
+        [150, 105, 70].forEach(function(r, idx) {
+          var yBase = 120 - idx * 60;
+          for (var i = 0; i < 40; i++) {
+            var a = (i / 40) * Math.PI * 2;
+            pts.push([Math.cos(a) * (r + 10), yBase + Math.sin(a) * 15]);
+          }
+        });
+
+        return pts;
+      }
+
+      cakePointsOrigin = generateCakeOutline();
+      var cakePointsCount = cakePointsOrigin.length;
+
+      window.addEventListener('resize', function () {
+        width = canvas.width = koef * innerWidth;
+        height = canvas.height = koef * innerHeight;
+        ctx.fillStyle = "rgba(0,0,0,1)";
+        ctx.fillRect(0, 0, width, height);
+      });
+
+      canvas.addEventListener('click', function(e) {
+        var rect = canvas.getBoundingClientRect();
+        createFirework(e.clientX - rect.left, e.clientY - rect.top);
+      });
+
+      var traceCount = mobile ? 18 : 45;
+      var targetPoints = [];
+
+      var pulse = function (kx, ky
